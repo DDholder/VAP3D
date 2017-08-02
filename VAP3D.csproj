@@ -61,9 +61,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="FSUIPCInterface.cs" />
-    <Compile Include="VoiceAttackPlugin.cs" />
+    <Compile Include="src\DefaultFSUIPCFactory.cs" />
+    <Compile Include="src\FSUIPCInterface.cs" />
+    <Compile Include="src\FunctionParser.cs" />
+    <Compile Include="src\IFSUIPCFactory.cs" />
+    <Compile Include="src\IFSUIPCInterface.cs" />
+    <Compile Include="src\VoiceAttackPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="tests\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
