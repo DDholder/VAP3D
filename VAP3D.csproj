@@ -48,8 +48,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FSUIPCClient">
-      <HintPath>..\external\FSUIPCDotNetClient\2.4\FSUIPCClient.dll</HintPath>
+    <Reference Include="FSUIPCClient, Version=2.4.0.0, Culture=neutral, PublicKeyToken=7e7559b53e380b17, processorArchitecture=x86">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\external\FSUIPCDotNetClient\3.0_RC2\FSUIPCClient.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -66,8 +67,15 @@
     <Compile Include="src\FunctionParser.cs" />
     <Compile Include="src\IFSUIPCFactory.cs" />
     <Compile Include="src\IFSUIPCInterface.cs" />
+    <Compile Include="src\monitor\AltimeterMonitor.cs" />
+    <Compile Include="src\monitor\GenericMonitor.cs" />
+    <Compile Include="src\monitor\GroundFlagMonitor.cs" />
+    <Compile Include="src\monitor\GroundSpeedMonitor.cs" />
+    <Compile Include="src\monitor\IMonitor.cs" />
+    <Compile Include="src\monitor\VerticalSpeedMonitor.cs" />
     <Compile Include="src\VoiceAttackPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\watch\Watcher.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="tests\" />

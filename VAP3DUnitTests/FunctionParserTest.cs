@@ -10,67 +10,67 @@ namespace VAP3DUnitTests
         [TestMethod]
         public void ParseFunctionNoArgs()
         {
-            string function = "MyFunc:";
-            FunctionParser parser = new FunctionParser(function);
+            string function = "beginMonitoringEvents:";
+            FunctionParser parser = new FunctionParser();
 
-            Assert.Equals(parser.Function, "MyFunc");
-            Assert.Equals(parser.Arguments.Count, 0);
-        }
+            Assert.IsTrue(parser.parseFunction(function));
 
-        [TestMethod]
-        public void ParseFunction1Arg()
-        {
-            string function = "MyFunc:someValue";
-            FunctionParser parser = new FunctionParser(function);
-
-            Assert.Equals(parser.Function, "MyFunc");
-            Assert.Equals(parser.Arguments.Count, 1);
-            Assert.Equals(parser.Arguments[0], "someValue");
+            Assert.AreEqual(parser.Function, "beginMonitoringEvents");
+            Assert.AreEqual(parser.Arguments.Count, 0);
         }
 
         [TestMethod]
         public void ParseFunctionMultipleArgs()
         {
-            string function = "MyFunc:someValue;1;true";
-            FunctionParser parser = new FunctionParser(function);
+            string function = "readOffset:ABCD;2;myVar";
+            FunctionParser parser = new FunctionParser();
 
-            Assert.Equals(parser.Function, "MyFunc");
-            Assert.Equals(parser.Arguments.Count, 3);
-            Assert.Equals(parser.Arguments[0], "someValue");
-            Assert.Equals(parser.Arguments[1], "1");
-            Assert.Equals(parser.Arguments[2], "true");
+            Assert.IsTrue(parser.parseFunction(function));
+
+            Assert.AreEqual(parser.Function, "readOffset");
+            Assert.AreEqual(parser.Arguments.Count, 3);
+            Assert.AreEqual(parser.Arguments[0], 0xABCD);
+            Assert.AreEqual(parser.Arguments[1], 2);
+            Assert.AreEqual(parser.Arguments[2], "myVar");
         }
 
         [TestMethod]
         public void ParseFunctionNoFunctionName()
         {
             string function = "foo;bar";
-            FunctionParser parser = new FunctionParser(function);
+            FunctionParser parser = new FunctionParser();
 
-            Assert.Equals(parser.Function, null);
-            Assert.Equals(parser.Arguments.Count, 0);
+            Assert.IsFalse(parser.parseFunction(function));
+
+            Assert.AreEqual(parser.Function, null);
+            Assert.AreEqual(parser.Arguments.Count, 0);
         }
 
         [TestMethod]
         public void ParseFunctionTrailingDelim()
         {
-            string function = "Foo:bar;baz;";
-            FunctionParser parser = new FunctionParser(function);
+            string function = "readOffset:ABCD;2;myVar;";
+            FunctionParser parser = new FunctionParser();
 
-            Assert.Equals(parser.Function, "Foo");
-            Assert.Equals(parser.Arguments.Count, 2);
-            Assert.Equals(parser.Arguments[0], "bar");
-            Assert.Equals(parser.Arguments[1], "baz");
+            Assert.IsTrue(parser.parseFunction(function));
+
+            Assert.AreEqual(parser.Function, "readOffset");
+            Assert.AreEqual(parser.Arguments.Count, 3);
+            Assert.AreEqual(parser.Arguments[0], 0xABCD);
+            Assert.AreEqual(parser.Arguments[1], 2);
+            Assert.AreEqual(parser.Arguments[2], "myVar");
         }
 
         [TestMethod]
         public void ParseFunctionInvalidCharactersInArgument()
         {
             string function = "MyFunc:an/arg";
-            FunctionParser parser = new FunctionParser(function);
+            FunctionParser parser = new FunctionParser();
 
-            Assert.Equals(parser.Function, "MyFunc");
-            Assert.Equals(parser.Arguments.Count, 0);
+            Assert.IsFalse(parser.parseFunction(function));
+
+            Assert.AreEqual(parser.Function, "MyFunc");
+            Assert.AreEqual(parser.Arguments.Count, 0);
         }
     }
 }

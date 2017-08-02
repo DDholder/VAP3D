@@ -61,17 +61,22 @@ namespace VAP3D
 
         public static void VA_Exit1(dynamic vaProxy)
         {
-            FSUIPCInterface fsuipcInterface = vaProxy.SessionState[SESSIONSTATE.KEY_FSUIPCINTERFACE];
+            IFSUIPCInterface fsuipcInterface = vaProxy.SessionState[SESSIONSTATE.KEY_FSUIPCINTERFACE];
             fsuipcInterface.shutdown();
         }
 
         public static void VA_Invoke1(dynamic vaProxy)
         {
-            FSUIPCInterface fsuipcInterface = vaProxy.SessionState[SESSIONSTATE.KEY_FSUIPCINTERFACE];
+            IFSUIPCInterface fsuipcInterface = vaProxy.SessionState[SESSIONSTATE.KEY_FSUIPCINTERFACE];
 
             string context = vaProxy.Context;
 
-            FunctionParser parser = new FunctionParser(context);
+            FunctionParser parser = new FunctionParser();
+            if(!parser.parseFunction(context))
+            {
+                vaProxy.WriteToLog("VA:P3D Error: Failed to parse function: " + context, "red");
+                return;
+            }
 
             MethodInfo callMethod = fsuipcInterface.GetType().GetMethod(parser.Function);
             callMethod.Invoke(fsuipcInterface, BindingFlags.Default, null, parser.Arguments.ToArray(), null);

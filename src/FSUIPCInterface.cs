@@ -7,148 +7,25 @@ namespace VAP3D
 {
     public class FSUIPCInterface : IFSUIPCInterface
     {
-        private interface IMonitorEvent
-        {
-            void valueChanged(object value, dynamic vaProxy);
-            void addGenericWatch(object value, WatchConditions condition, string identifier);
-        }
-
-        private struct GenericWatch
-        {
-            public object referenceValue;
-            public WatchConditions condition;
-            public string label;
-            public bool processed;
-        }
-
-        private abstract class GenericMonitor : IMonitorEvent
-        {
-            protected List<GenericWatch> mGenericWatches = new List<GenericWatch>();
-
-            protected bool doCompare(WatchConditions condition, dynamic a, dynamic b)
-            {
-                switch(condition)
-                {
-                    case WatchConditions.EqualTo:
-                        return a == b;
-                    case WatchConditions.GreaterThan:
-                        return a > b;
-                    case WatchConditions.GreaterThanEqualTo:
-                        return a >= b;
-                    case WatchConditions.LessThan:
-                        return a < b;
-                    case WatchConditions.LessThanEqualTo:
-                        return a <= b;
-                    case WatchConditions.Not:
-                        return a != b;
-                }
-
-                return false;
-            }
-
-            protected void processGenericWatch(object value, dynamic vaProxy)
-            {
-                for (int i = 0; i < mGenericWatches.Count; ++i)
-                {
-                    GenericWatch watch = mGenericWatches[i];
-                    if (!watch.processed)
-                    {
-                        Type t = getDataType();
-                        dynamic ourValue = Convert.ChangeType(value, t);
-                        dynamic refVal = Convert.ChangeType(watch.referenceValue, t);
-
-                        if (doCompare(watch.condition, ourValue, refVal))
-                        {
-                            vaProxy.ExecuteFunction("_VAP3D_Generic_" + watch.label);
-                            watch.processed = true;
-                        }
-                    }
-                }
-            }
-
-            public void addGenericWatch(object value, WatchConditions condition, string identifier)
-            {
-                GenericWatch watch = new GenericWatch();
-                watch.referenceValue = value;
-                watch.condition = condition;
-                watch.label = identifier;
-                watch.processed = false;
-
-                mGenericWatches.Add(watch);
-            }
-
-            public virtual void valueChanged(object value, dynamic vaProxy)
-            {
-                throw new NotImplementedException();
-            }
-
-            protected abstract Type getDataType();
-        }
-
-        private class GroundSpeedMonitor : GenericMonitor
-        {
-            private bool mCalledOut80Kts = false;
-
-            public override void valueChanged(object value, dynamic vaProxy)
-            {
-                int speedFixedPoint = (int)value;
-
-                double speed = ((double)speedFixedPoint / 65535.0);
-                if (speed > 80.0 && !mCalledOut80Kts)
-                {
-                    vaProxy.ExecuteFunction("_VAP3D_EightyKnots");
-                    mCalledOut80Kts = true;
-                }
-
-                processGenericWatch(speed, vaProxy);
-            }
-
-            protected override Type getDataType()
-            {
-                return typeof(double);
-            }
-        }
-
         private static int CONNECT_SLEEP_TIME = 1000;
         private static int EVENT_LOOP_DELAY = 250;
 
         private dynamic m_vaProxy;
-
         private bool m_isConnected;
 
         private object m_eventLock = new object();
+
         private Thread m_connectionThread;
         private Thread m_eventMonitorThread;
-
         private CancellationTokenSource m_cts = new CancellationTokenSource();
 
-        private List<Tuple<Offset, IMonitorEvent>> m_monitoredOffsets = new List<Tuple<Offset, IMonitorEvent>>();
-
-        private enum MonitoredOffsets
-        {
-            OnGroundFlag,
-            Groundspeed,
-            VerticalSpeed,
-            Altitude,
-
-            NUM_OFFSETS
-        }
-
-        private enum WatchConditions
-        {
-            LessThan,
-            LessThanEqualTo,
-            EqualTo,
-            GreaterThanEqualTo,
-            GreaterThan,
-            Not
-        }
+        private Dictionary<int, Tuple<Offset, IMonitor>> m_monitoredOffsets = new Dictionary<int, Tuple<Offset, IMonitor>>();
 
         // -----------------------------------------
         // Private methods
         private void connectionJob(CancellationToken token)
         {
-            while (!m_isConnected && token.IsCancellationRequested)
+            while (!m_isConnected && !token.IsCancellationRequested)
             {
                 try
                 {
@@ -164,18 +41,64 @@ namespace VAP3D
             }
         }
 
+        private Dictionary<string, object> getMonitorContext()
+        {
+            Dictionary<string, object> context = new Dictionary<string, object>();
+
+            // Get the altimeter setting (feet/meters)
+            Offset<short> altimeterSetting = new Offset<short>(0x0C18);
+
+            FSUIPCConnection.Process();
+
+            context.Add("altimeterSetting", altimeterSetting.Value);
+
+            return context;
+        }
+
+        private void setupMonitorOffsets(Dictionary<string, object> context)
+        {
+            // On ground flag
+            Tuple<Offset, IMonitor> groundFlagMonitorTuple = new Tuple<Offset, IMonitor>(
+                new Offset(0x0366, 2), new GroundFlagMonitor()
+            );
+            m_monitoredOffsets.Add(0x0366, groundFlagMonitorTuple);
+
+            // Groundspeed
+            Tuple<Offset, IMonitor> groundSpeedMonitorTuple = new Tuple<Offset, IMonitor>(
+                new Offset(0x02B4, 4), new GroundSpeedMonitor()
+                );
+            m_monitoredOffsets.Add(0x02B4, groundSpeedMonitorTuple);
+
+            // VS
+            Tuple<Offset, IMonitor> verticalSpeedMonitorTuple = new Tuple<Offset, IMonitor>(
+                new Offset(0x02C8, 4), new VerticalSpeedMonitor()
+                );
+            m_monitoredOffsets.Add(0x02C8, verticalSpeedMonitorTuple);
+
+            // Altitude
+            Tuple<Offset, IMonitor> altitudeMonitorTuple = new Tuple<Offset, IMonitor>(
+                new Offset(0x3324, 4), new AltimeterMonitor(Convert.ToInt16(context["altimeterSetting"]))
+                );
+            m_monitoredOffsets.Add(0x3324, altitudeMonitorTuple);
+        }
+
         private void eventMonitorJob(CancellationToken token)
         {
-            setupMonitorOffsets();
+            // Get some context
+            Dictionary<string, object> monitorContext = getMonitorContext(); 
 
-            while (token.IsCancellationRequested)
+            setupMonitorOffsets(monitorContext);
+
+            while (!token.IsCancellationRequested)
             {
                 FSUIPCConnection.Process();
 
-                for (int i = 0; i < m_monitoredOffsets.Count; ++i)
+                foreach (KeyValuePair<int, Tuple<Offset, IMonitor>> kv in m_monitoredOffsets)
                 {
-                    Tuple<Offset, IMonitorEvent> eventTuple = m_monitoredOffsets[i];
-                    eventTuple.Item2.valueChanged(eventTuple.Item1.Value, m_vaProxy);
+                    IMonitor monitor = kv.Value.Item2;
+                    Type monitorType = monitor.getOffsetDataType();
+
+                    monitor.valueChanged(kv.Value.Item1.GetValue(monitorType), m_vaProxy);
                 }
 
                 // Process
@@ -188,19 +111,7 @@ namespace VAP3D
             m_vaProxy.WriteToLog("VA:P3D Error: " + error, "red");
         }
 
-        private void setupMonitorOffsets()
-        {
-            // On ground flag
-            // Groundspeed
-            // VS
-            // Altitude
-            Offset groundspeedOffset = new Offset(0xABCD);
-            Tuple<Offset, IMonitorEvent> eventTuple = new Tuple<Offset, IMonitorEvent>(
-                groundspeedOffset, new GroundSpeedMonitor());
-
-            m_monitoredOffsets.Add(eventTuple);
-        }
-
+        // -----------------------------------------
         // Public Interface
         public void beginMonitoringEvents()
         {
@@ -228,20 +139,18 @@ namespace VAP3D
             m_eventMonitorThread = null;
         }
 
-        public void addMetricToMonitor(int metricId, object value, int conditionFlag, string identifier)
+        public void addMetricToMonitor(int offset, object value, int conditionFlag, string identifier)
         {
-            Tuple<Offset, IMonitorEvent> eventTuple = m_monitoredOffsets[metricId];
-            eventTuple.Item2.addGenericWatch(value, (WatchConditions)conditionFlag, identifier);
+            Tuple<Offset, IMonitor> eventTuple = m_monitoredOffsets[offset];
+            eventTuple.Item2.addGenericWatcher(value, (Watcher.WatchCondition)conditionFlag, identifier);
         }
 
-        public void readOffset(int offsetAddress, int numBytes, string destinationVariable)
-        {
-            
+        public void readOffset(int offset, int numBytes, string destinationVariable)
+        {  
         }
 
-        public void writeOffset(int offsetAddress, int numBytes, string sourceVariable)
+        public void writeOffset(int offset, int numBytes, string sourceVariable)
         {
-
         }
 
         public void initialise(dynamic vaProxy)

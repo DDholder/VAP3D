@@ -8,7 +8,7 @@ namespace VAP3DUnitTests
     [TestClass]
     public class VoiceAttackPluginTest
     {
-        class MockInterface : IFSUIPCInterface
+        public class MockInterface : IFSUIPCInterface
         {
             public int Called = 0x0;
 
@@ -43,7 +43,7 @@ namespace VAP3DUnitTests
             }
         }
 
-        class MockFactory : IFSUIPCFactory
+        public class MockFactory : IFSUIPCFactory
         {
             IFSUIPCInterface mInterface = null;
 
@@ -58,10 +58,15 @@ namespace VAP3DUnitTests
             }
         }
 
-        class MyVAProxy
+        public class MyVAProxy
         {
             public Dictionary<String, object> SessionState;
             public string Context;
+
+            public MyVAProxy()
+            {
+                SessionState = new Dictionary<string, object>();
+            }
         }
 
         [TestMethod]
@@ -70,6 +75,7 @@ namespace VAP3DUnitTests
             MockInterface mockInterface = new MockInterface();
             MyVAProxy proxy = new MyVAProxy();
             MockFactory factory = new MockFactory();
+            factory.setInterface(mockInterface);
 
             VoiceAttackPlugin.SetFSUIPCFactory(proxy, factory);
 
@@ -81,7 +87,7 @@ namespace VAP3DUnitTests
             Assert.IsInstanceOfType(proxy.SessionState[
                 VoiceAttackPlugin.SESSIONSTATE.KEY_FSUIPCINTERFACE], typeof(MockInterface));
 
-            Assert.Equals(mockInterface.Called, 0x2);
+            Assert.AreEqual(mockInterface.Called, 0x2);
         }
 
         [TestMethod]
@@ -96,7 +102,7 @@ namespace VAP3DUnitTests
             // Call Exit1
             VoiceAttackPlugin.VA_Exit1(proxy);
 
-            Assert.Equals(mockInterface.Called, 0x8);
+            Assert.AreEqual(mockInterface.Called, 0x8);
         }
 
         [TestMethod]
@@ -107,12 +113,12 @@ namespace VAP3DUnitTests
 
             proxy.SessionState.Add(VoiceAttackPlugin.SESSIONSTATE.KEY_FSUIPCINTERFACE,
                 mockInterface);
-            proxy.Context = "readOffset:0xABC;2;myVar";
+            proxy.Context = "readOffset:ABC;2;myVar";
 
             // Call Invoke1
             VoiceAttackPlugin.VA_Invoke1(proxy);
 
-            Assert.Equals(mockInterface.Called, 0x4);
+            Assert.AreEqual(mockInterface.Called, 0x4);
         }
 
         [TestMethod]

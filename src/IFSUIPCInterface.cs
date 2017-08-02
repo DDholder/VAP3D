@@ -10,8 +10,8 @@ namespace VAP3D
     {
         void beginMonitoringEvents();
         void stopMonitoringEvents();
-        void readOffset(int offsetAddress, int numBytes, string destinationVariable);
-        void writeOffset(int offsetAddress, int numBytes, string sourceVariable);
+        void readOffset(int offset, int numBytes, string destinationVariable);
+        void writeOffset(int offset, int numBytes, string sourceVariable);
 
         void initialise(dynamic vaProxy);
         void shutdown();

@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FunctionParserTest.cs" />
+    <Compile Include="FSUIPCInterfaceTest.cs" />
     <Compile Include="VoiceAttackPluginTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
