@@ -63,6 +63,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\DefaultFSUIPCFactory.cs" />
+    <Compile Include="src\EventMonitor.cs" />
     <Compile Include="src\FSUIPCInterface.cs" />
     <Compile Include="src\FunctionParser.cs" />
     <Compile Include="src\IFSUIPCFactory.cs" />

@@ -7,19 +7,14 @@ namespace VAP3D
 {
     public class FSUIPCInterface : IFSUIPCInterface
     {
-        private static int CONNECT_SLEEP_TIME = 1000;
-        private static int EVENT_LOOP_DELAY = 250;
+        private static int CONNECT_SLEEP_TIME = 2000;
 
-        private dynamic m_vaProxy;
-        private bool m_isConnected;
+        private dynamic m_vaProxy = null;
+        private bool m_isConnected = false;
 
-        private object m_eventLock = new object();
-
-        private Thread m_connectionThread;
-        private Thread m_eventMonitorThread;
+        private EventMonitor m_eventMonitor = null;
+        private Thread m_connectionThread = null;
         private CancellationTokenSource m_cts = new CancellationTokenSource();
-
-        private Dictionary<int, Tuple<Offset, IMonitor>> m_monitoredOffsets = new Dictionary<int, Tuple<Offset, IMonitor>>();
 
         // -----------------------------------------
         // Private methods
@@ -36,73 +31,8 @@ namespace VAP3D
                 }
                 catch (Exception e)
                 {
-                    Thread.Sleep(CONNECT_SLEEP_TIME); 
+                    Thread.Sleep(CONNECT_SLEEP_TIME);
                 }
-            }
-        }
-
-        private Dictionary<string, object> getMonitorContext()
-        {
-            Dictionary<string, object> context = new Dictionary<string, object>();
-
-            // Get the altimeter setting (feet/meters)
-            Offset<short> altimeterSetting = new Offset<short>(0x0C18);
-
-            FSUIPCConnection.Process();
-
-            context.Add("altimeterSetting", altimeterSetting.Value);
-
-            return context;
-        }
-
-        private void setupMonitorOffsets(Dictionary<string, object> context)
-        {
-            // On ground flag
-            Tuple<Offset, IMonitor> groundFlagMonitorTuple = new Tuple<Offset, IMonitor>(
-                new Offset(0x0366, 2), new GroundFlagMonitor()
-            );
-            m_monitoredOffsets.Add(0x0366, groundFlagMonitorTuple);
-
-            // Groundspeed
-            Tuple<Offset, IMonitor> groundSpeedMonitorTuple = new Tuple<Offset, IMonitor>(
-                new Offset(0x02B4, 4), new GroundSpeedMonitor()
-                );
-            m_monitoredOffsets.Add(0x02B4, groundSpeedMonitorTuple);
-
-            // VS
-            Tuple<Offset, IMonitor> verticalSpeedMonitorTuple = new Tuple<Offset, IMonitor>(
-                new Offset(0x02C8, 4), new VerticalSpeedMonitor()
-                );
-            m_monitoredOffsets.Add(0x02C8, verticalSpeedMonitorTuple);
-
-            // Altitude
-            Tuple<Offset, IMonitor> altitudeMonitorTuple = new Tuple<Offset, IMonitor>(
-                new Offset(0x3324, 4), new AltimeterMonitor(Convert.ToInt16(context["altimeterSetting"]))
-                );
-            m_monitoredOffsets.Add(0x3324, altitudeMonitorTuple);
-        }
-
-        private void eventMonitorJob(CancellationToken token)
-        {
-            // Get some context
-            Dictionary<string, object> monitorContext = getMonitorContext(); 
-
-            setupMonitorOffsets(monitorContext);
-
-            while (!token.IsCancellationRequested)
-            {
-                FSUIPCConnection.Process();
-
-                foreach (KeyValuePair<int, Tuple<Offset, IMonitor>> kv in m_monitoredOffsets)
-                {
-                    IMonitor monitor = kv.Value.Item2;
-                    Type monitorType = monitor.getOffsetDataType();
-
-                    monitor.valueChanged(kv.Value.Item1.GetValue(monitorType), m_vaProxy);
-                }
-
-                // Process
-                Thread.Sleep(EVENT_LOOP_DELAY);
             }
         }
 
@@ -121,8 +51,13 @@ namespace VAP3D
                 return;
             }
 
-            m_eventMonitorThread = new Thread(() => eventMonitorJob(m_cts.Token));
-            m_eventMonitorThread.Start();
+            if (m_eventMonitor.isRunning())
+            {
+                writeErrorToLog("Event monitor already running. Stop it first with `stopMonitoringEvents:`");
+                return;
+            }
+
+            m_eventMonitor.start();
         }
 
         public void stopMonitoringEvents()
@@ -133,24 +68,42 @@ namespace VAP3D
                 return;
             }
 
-            m_cts.Cancel();
-            m_cts.Dispose();
+            if (!m_eventMonitor.isRunning())
+            {
+                writeErrorToLog("Event monitor is not running.");
+                return;
+            }
 
-            m_eventMonitorThread = null;
+            m_eventMonitor.stop();
         }
 
         public void addMetricToMonitor(int offset, object value, int conditionFlag, string identifier)
         {
-            Tuple<Offset, IMonitor> eventTuple = m_monitoredOffsets[offset];
-            eventTuple.Item2.addGenericWatcher(value, (Watcher.WatchCondition)conditionFlag, identifier);
+            if (!m_eventMonitor.isRunning())
+            {
+                writeErrorToLog("Event monitor is not currently running. Call `beginMonitoringEvents:` first");
+                return;
+            }
+
+            m_eventMonitor.addMetricToMonitor(offset, value, conditionFlag, identifier);
         }
 
         public void readOffset(int offset, int numBytes, string destinationVariable)
-        {  
+        {
+            if (!m_isConnected)
+            {
+                writeErrorToLog("Not connected");
+                return;
+            }
         }
 
         public void writeOffset(int offset, int numBytes, string sourceVariable)
         {
+            if (!m_isConnected)
+            {
+                writeErrorToLog("Not connected");
+                return;
+            }
         }
 
         public void initialise(dynamic vaProxy)
@@ -158,6 +111,8 @@ namespace VAP3D
             m_vaProxy = vaProxy;
             m_connectionThread = new Thread(() => connectionJob(m_cts.Token));
             m_connectionThread.Start();
+
+            m_eventMonitor = new EventMonitor(vaProxy);
         }
 
         public void shutdown()
@@ -165,16 +120,15 @@ namespace VAP3D
             m_cts.Cancel();
             m_cts.Dispose();
 
+            if (m_eventMonitor.isRunning())
+            {
+                m_eventMonitor.stop();
+            }
+
             if (m_isConnected)
             {
                 FSUIPCConnection.Close();
             }
-        }
-
-        public FSUIPCInterface()
-        {
-            m_isConnected = false;
-            m_vaProxy = null;
         }
     }
 }
