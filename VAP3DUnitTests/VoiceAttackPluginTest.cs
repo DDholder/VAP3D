@@ -2,82 +2,24 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VAP3D;
 using System.Collections.Generic;
+using Moq;
 
 namespace VAP3DUnitTests
 {
     [TestClass]
     public class VoiceAttackPluginTest
     {
-        public class MockInterface : IFSUIPCInterface
-        {
-            public int Called = 0x0;
-
-            public void beginMonitoringEvents()
-            {
-                Called |= 0x1;
-            }
-
-            public void initialise(dynamic vaProxy)
-            {
-                Called |= 0x2;
-            }
-
-            public void readOffset(int offsetAddress, int numBytes, string destinationVariable)
-            {
-                Called |= 0x4;
-            }
-
-            public void shutdown()
-            {
-                Called |= 0x8;
-            }
-
-            public void stopMonitoringEvents()
-            {
-                Called |= 0x10;
-            }
-
-            public void writeOffset(int offsetAddress, int numBytes, string sourceVariable)
-            {
-                Called |= 0x20;
-            }
-        }
-
-        public class MockFactory : IFSUIPCFactory
-        {
-            IFSUIPCInterface mInterface = null;
-
-            public void setInterface(IFSUIPCInterface fsuipcInterface)
-            {
-                mInterface = fsuipcInterface;
-            }
-
-            public IFSUIPCInterface createFSUIPCInterface()
-            {
-                return mInterface;
-            }
-        }
-
-        public class MyVAProxy
-        {
-            public Dictionary<String, object> SessionState;
-            public string Context;
-
-            public MyVAProxy()
-            {
-                SessionState = new Dictionary<string, object>();
-            }
-        }
-
         [TestMethod]
-        public void InitialisesNewFSUIPCInterface()
+        public void VoiceAttackPluginTests_InitialisesNewFSUIPCInterface()
         {
-            MockInterface mockInterface = new MockInterface();
-            MyVAProxy proxy = new MyVAProxy();
-            MockFactory factory = new MockFactory();
-            factory.setInterface(mockInterface);
+            var mockInterface = new Mock<IFSUIPCInterface>();
+            var mockFactory = new Mock<IFSUIPCFactory>();
+            mockFactory.Setup(factory => factory.createFSUIPCInterface(It.IsAny<IFSUIPC>(), 
+                It.IsAny<IOffsetFactory>())).Returns(mockInterface.Object);
 
-            VoiceAttackPlugin.SetFSUIPCFactory(proxy, factory);
+            MyVAProxy proxy = new MyVAProxy();
+
+            VoiceAttackPlugin.SetFSUIPCFactory(proxy, mockFactory.Object);
 
             // Call Init1
             VoiceAttackPlugin.VA_Init1(proxy);
@@ -85,50 +27,56 @@ namespace VAP3DUnitTests
             Assert.IsTrue(proxy.SessionState.ContainsKey(
                 VoiceAttackPlugin.SESSIONSTATE.KEY_FSUIPCINTERFACE));
             Assert.IsInstanceOfType(proxy.SessionState[
-                VoiceAttackPlugin.SESSIONSTATE.KEY_FSUIPCINTERFACE], typeof(MockInterface));
+                VoiceAttackPlugin.SESSIONSTATE.KEY_FSUIPCINTERFACE], typeof(IFSUIPCInterface));
 
-            Assert.AreEqual(mockInterface.Called, 0x2);
+            mockInterface.Verify(x => x.initialise(proxy), Times.AtMost(1));
         }
 
         [TestMethod]
-        public void ShutdownFSUIPCInterfaceOnExit()
+        public void VoiceAttackPluginTests_ShutdownFSUIPCInterfaceOnExit()
         {
-            MockInterface mockInterface = new MockInterface();
+            var mockInterface = new Mock<IFSUIPCInterface>();
             MyVAProxy proxy = new MyVAProxy();
 
             proxy.SessionState.Add(VoiceAttackPlugin.SESSIONSTATE.KEY_FSUIPCINTERFACE,
-                mockInterface);
+                mockInterface.Object);
 
             // Call Exit1
             VoiceAttackPlugin.VA_Exit1(proxy);
 
-            Assert.AreEqual(mockInterface.Called, 0x8);
+            mockInterface.Verify(x => x.shutdown(), Times.AtMost(1));
         }
 
         [TestMethod]
-        public void InvokesMethodAndArgsOnFSUIPCInterface_1()
+        public void VoiceAttackPluginTests_InvokesMethodAndArgsOnFSUIPCInterface_1()
         {
-            MockInterface mockInterface = new MockInterface();
+            var mockInterface = new Mock<IFSUIPCInterface>();
             MyVAProxy proxy = new MyVAProxy();
 
             proxy.SessionState.Add(VoiceAttackPlugin.SESSIONSTATE.KEY_FSUIPCINTERFACE,
-                mockInterface);
+                mockInterface.Object);
             proxy.Context = "readOffset:ABC;2;myVar";
 
             // Call Invoke1
             VoiceAttackPlugin.VA_Invoke1(proxy);
 
-            Assert.AreEqual(mockInterface.Called, 0x4);
+            mockInterface.Verify(x => x.readOffset(0xABC, typeof(short), "myVar"), Times.AtMost(1));
         }
 
         [TestMethod]
-        public void InvokesMethodAndArgsOnFSUIPCInterface_2()
+        public void VoiceAttackPluginTests_InvokesMethodAndArgsOnFSUIPCInterface_2()
         {
-        }
+            var mockInterface = new Mock<IFSUIPCInterface>();
+            MyVAProxy proxy = new MyVAProxy();
 
-        [TestMethod]
-        public void InvokesMethodAndArgsOnFSUIPCInterface_3()
-        {
+            proxy.SessionState.Add(VoiceAttackPlugin.SESSIONSTATE.KEY_FSUIPCINTERFACE,
+                mockInterface.Object);
+            proxy.Context = "beginMonitoringEvents:";
+
+            // Call Invoke1
+            VoiceAttackPlugin.VA_Invoke1(proxy);
+
+            mockInterface.Verify(x => x.beginMonitoringEvents(), Times.AtMost(1));
         }
     }
 }

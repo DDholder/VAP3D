@@ -63,11 +63,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="src\DefaultFSUIPCFactory.cs" />
+    <Compile Include="src\DefaultOffsetFactory.cs" />
     <Compile Include="src\EventMonitor.cs" />
+    <Compile Include="src\interface\IOffset.cs" />
+    <Compile Include="src\interface\IOffsetFactory.cs" />
+    <Compile Include="src\lvar\Lvar.cs" />
+    <Compile Include="src\mjc\Mjc.cs" />
+    <Compile Include="src\OffsetValues.cs" />
+    <Compile Include="src\utilities\Utilities.cs" />
+    <Compile Include="src\wrapper\FSUIPCImpl.cs" />
     <Compile Include="src\FSUIPCInterface.cs" />
     <Compile Include="src\FunctionParser.cs" />
-    <Compile Include="src\IFSUIPCFactory.cs" />
-    <Compile Include="src\IFSUIPCInterface.cs" />
+    <Compile Include="src\interface\IFSUIPC.cs" />
+    <Compile Include="src\interface\IFSUIPCFactory.cs" />
+    <Compile Include="src\interface\IFSUIPCInterface.cs" />
     <Compile Include="src\monitor\AltimeterMonitor.cs" />
     <Compile Include="src\monitor\GenericMonitor.cs" />
     <Compile Include="src\monitor\GroundFlagMonitor.cs" />
@@ -77,6 +86,7 @@
     <Compile Include="src\VoiceAttackPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\watch\Watcher.cs" />
+    <Compile Include="src\wrapper\OffsetImpl.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="tests\" />

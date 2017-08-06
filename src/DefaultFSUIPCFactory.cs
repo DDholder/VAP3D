@@ -8,9 +8,9 @@ namespace VAP3D
 {
     public class DefaultFSUIPCFactory : IFSUIPCFactory
     {
-        public IFSUIPCInterface createFSUIPCInterface()
+        public IFSUIPCInterface createFSUIPCInterface(IFSUIPC fsuipc, IOffsetFactory offsetFactory)
         {
-            return new FSUIPCInterface();
+            return new FSUIPCInterface(fsuipc, offsetFactory);
         }
     }
 }

@@ -53,7 +53,10 @@ namespace VAP3D
                 factory = vaProxy.SessionState[SESSIONSTATE.KEY_FSUIPCFACTORY];
             }
 
-            IFSUIPCInterface fsuipcInterface = factory.createFSUIPCInterface();
+            IFSUIPCInterface fsuipcInterface = factory.createFSUIPCInterface(
+                new FSUIPCImpl(), 
+                new DefaultOffsetFactory());
+
             fsuipcInterface.initialise(vaProxy);
 
             vaProxy.SessionState.Add(SESSIONSTATE.KEY_FSUIPCINTERFACE, fsuipcInterface);

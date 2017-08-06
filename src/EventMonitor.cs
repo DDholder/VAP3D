@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using FSUIPC;
 
 namespace VAP3D
 {
@@ -16,17 +17,19 @@ namespace VAP3D
         private Thread m_thread = null;
         private CancellationTokenSource m_cts = null;
         private dynamic m_vaProxy = null;
+        private IFSUIPC m_fsuipc = null;
+        private IOffsetFactory m_offsetFactory = null;
 
-        private Dictionary<int, Tuple<Offset, IMonitor>> m_monitoredOffsets = new Dictionary<int, Tuple<Offset, IMonitor>>();
+        private Dictionary<int, Tuple<IOffset, IMonitor>> m_monitoredOffsets = new Dictionary<int, Tuple<IOffset, IMonitor>>();
 
         private Dictionary<string, object> getMonitorContext()
         {
             Dictionary<string, object> context = new Dictionary<string, object>();
 
             // Get the altimeter setting (feet/meters)
-            Offset<short> altimeterSetting = new Offset<short>(0x0C18);
+            IOffset<short> altimeterSetting = m_offsetFactory.createOffset<short>(OffsetValues.AltimeterSetting);
 
-            FSUIPCConnection.Process();
+            m_fsuipc.Process();
 
             context.Add("altimeterSetting", altimeterSetting.Value);
 
@@ -35,18 +38,18 @@ namespace VAP3D
 
         private void startMonitoringOffset(int offset, int byteSize, IMonitor monitor)
         {
-            Tuple<Offset, IMonitor> eventTuple = new Tuple<Offset, IMonitor>(
-                new Offset(offset, byteSize), monitor);
+            Tuple<IOffset, IMonitor> eventTuple = new Tuple<IOffset, IMonitor>(
+                m_offsetFactory.createOffset(offset, byteSize), monitor);
 
             m_monitoredOffsets.Add(offset, eventTuple);
         }
 
         private void setupDefaultMonitorOffsets(Dictionary<string, object> context)
         {
-            startMonitoringOffset(0x0366, 2, new GroundFlagMonitor()); // On ground flag
-            startMonitoringOffset(0x02B4, 4, new GroundSpeedMonitor()); // Groundspeed
-            startMonitoringOffset(0x02C8, 4, new VerticalSpeedMonitor()); // VS
-            startMonitoringOffset(0x3324, 4, new AltimeterMonitor(Convert.ToInt16(context["altimeterSetting"]))); // Altitude
+            startMonitoringOffset(OffsetValues.GroundFlag, 2, new GroundFlagMonitor()); // On ground flag
+            startMonitoringOffset(OffsetValues.GroundSpeed, 4, new GroundSpeedMonitor()); // Groundspeed
+            startMonitoringOffset(OffsetValues.VerticalSpeed_InAir, 4, new VerticalSpeedMonitor()); // VS
+            startMonitoringOffset(OffsetValues.Altimeter, 4, new AltimeterMonitor(Convert.ToInt16(context["altimeterSetting"]))); // Altitude
         }
 
         private void run(CancellationToken token, dynamic vaProxy)
@@ -58,11 +61,11 @@ namespace VAP3D
 
             while (!token.IsCancellationRequested)
             {
-                FSUIPCConnection.Process();
+                m_fsuipc.Process();
 
                 lock (m_lock)
                 {
-                    foreach (KeyValuePair<int, Tuple<Offset, IMonitor>> kv in m_monitoredOffsets)
+                    foreach (KeyValuePair<int, Tuple<IOffset, IMonitor>> kv in m_monitoredOffsets)
                     {
                         IMonitor monitor = kv.Value.Item2;
                         Type monitorType = monitor.getOffsetDataType();
@@ -88,7 +91,7 @@ namespace VAP3D
                     return false;
                 }
 
-                Tuple<Offset, IMonitor> eventTuple = m_monitoredOffsets[offset];
+                Tuple<IOffset, IMonitor> eventTuple = m_monitoredOffsets[offset];
                 eventTuple.Item2.addGenericWatcher(value, (Watcher.WatchCondition)conditionFlag, identifier);
             }
 
@@ -113,12 +116,17 @@ namespace VAP3D
 
         public bool isRunning()
         {
+            if (m_thread == null)
+                return false;
+
             return m_thread.IsAlive;
         }
 
-        public EventMonitor(dynamic vaProxy)
+        public EventMonitor(dynamic vaProxy, IFSUIPC fsuipc, IOffsetFactory offsetFactory)
         {
             m_vaProxy = vaProxy;
+            m_fsuipc = fsuipc;
+            m_offsetFactory = offsetFactory;
         }
     }
 }

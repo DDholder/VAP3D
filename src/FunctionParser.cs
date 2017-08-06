@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace VAP3D
 {
@@ -31,6 +32,12 @@ namespace VAP3D
             if (param.ParameterType == typeof(int) && param.Name == "offset") // bit of a hack, but it will have to do
             {
                 return Convert.ToInt32(arg, 16);
+            }
+            else if (param.ParameterType == typeof(Type))
+            {
+
+                var type = Type.GetType("System." + arg);
+                return type;
             }
             else
             {

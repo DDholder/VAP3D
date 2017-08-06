@@ -8,7 +8,7 @@ namespace VAP3DUnitTests
     public class FunctionParserTest
     {
         [TestMethod]
-        public void ParseFunctionNoArgs()
+        public void FunctionParserTests_NoArgs()
         {
             string function = "beginMonitoringEvents:";
             FunctionParser parser = new FunctionParser();
@@ -20,9 +20,9 @@ namespace VAP3DUnitTests
         }
 
         [TestMethod]
-        public void ParseFunctionMultipleArgs()
+        public void FunctionParserTests_MultipleArgs()
         {
-            string function = "readOffset:ABCD;2;myVar";
+            string function = "readOffset:ABCD;Int16;myVar";
             FunctionParser parser = new FunctionParser();
 
             Assert.IsTrue(parser.parseFunction(function));
@@ -30,12 +30,12 @@ namespace VAP3DUnitTests
             Assert.AreEqual(parser.Function, "readOffset");
             Assert.AreEqual(parser.Arguments.Count, 3);
             Assert.AreEqual(parser.Arguments[0], 0xABCD);
-            Assert.AreEqual(parser.Arguments[1], 2);
+            Assert.AreEqual(parser.Arguments[1], typeof(short));
             Assert.AreEqual(parser.Arguments[2], "myVar");
         }
 
         [TestMethod]
-        public void ParseFunctionNoFunctionName()
+        public void FunctionParserTests_NoFunctionName()
         {
             string function = "foo;bar";
             FunctionParser parser = new FunctionParser();
@@ -47,9 +47,9 @@ namespace VAP3DUnitTests
         }
 
         [TestMethod]
-        public void ParseFunctionTrailingDelim()
+        public void FunctionParserTests_TrailingDelim()
         {
-            string function = "readOffset:ABCD;2;myVar;";
+            string function = "readOffset:ABCD;Int16;myVar;";
             FunctionParser parser = new FunctionParser();
 
             Assert.IsTrue(parser.parseFunction(function));
@@ -57,12 +57,12 @@ namespace VAP3DUnitTests
             Assert.AreEqual(parser.Function, "readOffset");
             Assert.AreEqual(parser.Arguments.Count, 3);
             Assert.AreEqual(parser.Arguments[0], 0xABCD);
-            Assert.AreEqual(parser.Arguments[1], 2);
+            Assert.AreEqual(parser.Arguments[1], typeof(short));
             Assert.AreEqual(parser.Arguments[2], "myVar");
         }
 
         [TestMethod]
-        public void ParseFunctionInvalidCharactersInArgument()
+        public void FunctionParserTests_InvalidCharactersInArgument()
         {
             string function = "MyFunc:an/arg";
             FunctionParser parser = new FunctionParser();
