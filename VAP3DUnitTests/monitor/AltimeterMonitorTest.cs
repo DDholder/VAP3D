@@ -97,7 +97,7 @@ namespace VAP3DUnitTests.monitor
             mon.valueChanged(12000, mockProxy.Object);
             mon.valueChanged(11000, mockProxy.Object);
 
-            System.Threading.Thread.Sleep((int)AltimeterMonitor.CallThresholdMs);
+            System.Threading.Thread.Sleep((int)AltimeterMonitor.CallThresholdMs + 1000);
 
             mon.valueChanged(10500, mockProxy.Object);
             mon.valueChanged(10001, mockProxy.Object);

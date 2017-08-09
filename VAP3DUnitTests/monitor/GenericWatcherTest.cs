@@ -8,7 +8,7 @@ namespace VAP3DUnitTests.monitor
     [TestClass]
     public class GenericWatcherTest
     {
-        class MyMonitor : GenericMonitor
+        private class MyMonitor : GenericMonitor
         {
             public override Type getOffsetDataType()
             {
@@ -17,7 +17,7 @@ namespace VAP3DUnitTests.monitor
 
             public override void valueChanged(object value, dynamic vaProxy)
             {
-                processGenericWatch(value, vaProxy);
+                //processGenericWatch(value, vaProxy);
             }
 
             protected override Type getDataType()

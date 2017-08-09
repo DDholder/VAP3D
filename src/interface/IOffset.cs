@@ -8,10 +8,11 @@ namespace VAP3D
 {
     public interface IOffset
     {
-        //
-        // Summary:
-        //     True is this offset represents a fixed length string.
-        bool IsFixedLengthString { get; set; }
+        Type GetUnderlyingType();
+    }
+
+    public interface IOffset<T> : IOffset
+    {
         //
         // Summary:
         //     Indicates that this Offset is to be Write-Only. While marked as Write-Only the
@@ -27,24 +28,9 @@ namespace VAP3D
         bool IsConnected { get; }
         //
         // Summary:
-        //     This property can be used to force this offset to be read or written on the next
-        //     process.
-        //     Normally you need not set this as the default (AutoSense) works perfectly well.
-        FSUIPC.OffsetAction ActionAtNextProcess { get; set; }
-        //
-        // Summary:
         //     The FSUIPC offset address to read from or write to, as specified in the FSUIPC
         //     for Programmer's document.
         int Address { get; set; }
-        //
-        // Summary:
-        //     The unique internal ID of this offset
-        Guid ID { get; }
-        //
-        // Summary:
-        //     The length of the data in this offset in bytes.
-        int DataLength { get; }
-
         //
         // Summary:
         //     Disconnects this Offset from the FSUIPCConnection class. The value of this Offset
@@ -64,28 +50,6 @@ namespace VAP3D
         void Disconnect();
         //
         // Summary:
-        //     Gets the value of this offset as the specified type
-        //
-        // Type parameters:
-        //   T:
-        //     The type the value should be returned as
-        //
-        // Returns:
-        //     The value of the offset
-        T GetValue<T>();
-        //
-        // Summary:
-        //     Gets the value of this offset as the specified type
-        //
-        // Parameters:
-        //   AsType:
-        //     The type the value should be returned as
-        //
-        // Returns:
-        //     The value of the offset
-        object GetValue(Type AsType);
-        //
-        // Summary:
         //     Reconnects this Offset to FSUIPC. The value of this Offset will be updated/written
         //     during subsequent Process() calls.
         //
@@ -101,23 +65,22 @@ namespace VAP3D
         void Reconnect();
         //
         // Summary:
-        //     Sets the value of this offset. No type checking or other data varification is
-        //     done.
-        //
-        // Parameters:
-        //   NewValue:
-        void SetValue(object NewValue);
-        //
-        // Summary:
         //     Return a string value contianing information about this Offset.
         //
         // Returns:
         //     A string containing the Offset Address and Length
         string ToString();
-    }
-
-    public interface IOffset<T> : IOffset
-    {
+        //
+        // Summary:
+        //     Gets/sets the value of the Offset
         T Value { get; set; }
+        //
+        // Summary:
+        //     Gets the current offset value
+        T GetValue();
+        //
+        // Summary:
+        //     Sets the current offset value
+        void SetValue(T value);
     }
 }

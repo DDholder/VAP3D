@@ -36,20 +36,20 @@ namespace VAP3D
             return context;
         }
 
-        private void startMonitoringOffset(int offset, int byteSize, IMonitor monitor)
+        private void startMonitoringOffset<T>(int offset, int byteSize, IMonitor monitor)
         {
             Tuple<IOffset, IMonitor> eventTuple = new Tuple<IOffset, IMonitor>(
-                m_offsetFactory.createOffset(offset, byteSize), monitor);
+                m_offsetFactory.createOffset<T>(offset), monitor);
 
             m_monitoredOffsets.Add(offset, eventTuple);
         }
 
         private void setupDefaultMonitorOffsets(Dictionary<string, object> context)
         {
-            startMonitoringOffset(OffsetValues.GroundFlag, 2, new GroundFlagMonitor()); // On ground flag
-            startMonitoringOffset(OffsetValues.GroundSpeed, 4, new GroundSpeedMonitor()); // Groundspeed
-            startMonitoringOffset(OffsetValues.VerticalSpeed_InAir, 4, new VerticalSpeedMonitor()); // VS
-            startMonitoringOffset(OffsetValues.Altimeter, 4, new AltimeterMonitor(Convert.ToInt16(context["altimeterSetting"]))); // Altitude
+            startMonitoringOffset<short>(OffsetValues.GroundFlag, 2, new GroundFlagMonitor()); // On ground flag
+            startMonitoringOffset<int>(OffsetValues.GroundSpeed, 4, new GroundSpeedMonitor()); // Groundspeed
+            startMonitoringOffset<int>(OffsetValues.VerticalSpeed_InAir, 4, new VerticalSpeedMonitor()); // VS
+            startMonitoringOffset<int>(OffsetValues.Altimeter, 4, new AltimeterMonitor(Convert.ToInt16(context["altimeterSetting"]))); // Altitude
         }
 
         private void run(CancellationToken token, dynamic vaProxy)
@@ -70,7 +70,8 @@ namespace VAP3D
                         IMonitor monitor = kv.Value.Item2;
                         Type monitorType = monitor.getOffsetDataType();
 
-                        monitor.valueChanged(kv.Value.Item1.GetValue(monitorType), vaProxy);
+                        object value = Utilities.getOffsetValue(kv.Value.Item1);
+                        monitor.valueChanged(value, vaProxy);
                     }
                 }
 

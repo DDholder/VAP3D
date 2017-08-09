@@ -81,7 +81,7 @@ namespace VAP3D
 
             // Now read MJC_VAR_READ_VALUE
             int numBytes = Utilities.numBytesFromType(dataType);
-            IOffset valueWriteOffset = m_offsetFactory.createOffset(lvarWriteLocation, numBytes);
+            IOffset valueWriteOffset = m_offsetFactory.createOffsetForType(lvarWriteLocation, dataType);
 
             int hiword = (int)geSizeMaskForType(dataType);
             if ((SizeMask)hiword == SizeMask.INVALID)
@@ -95,7 +95,7 @@ namespace VAP3D
             lvarName.Value = ":MJC_VAR_READ_VALUE";
             m_fsuipc.Process();
 
-            Utilities.setVariableValueFromOffset(dataType, valueWriteOffset,
+            Utilities.setVariableValue(dataType, Utilities.getOffsetValue(valueWriteOffset),
                 destinationVariable, m_vaProxy);
 
             return true;
@@ -117,10 +117,10 @@ namespace VAP3D
 
             // Write the value
             int numBytes = Utilities.numBytesFromType(dataType);
-            IOffset valueReadOffset = m_offsetFactory.createOffset(lvarReadLocation, numBytes);
+            IOffset valueReadOffset = m_offsetFactory.createOffsetForType(lvarReadLocation, dataType);
 
-            object val = Utilities.getVariableValueForOffset(dataType, sourceVariable, m_vaProxy);
-            valueReadOffset.SetValue(val);
+            object val = Utilities.getVariableValue(dataType, sourceVariable, m_vaProxy);
+            Utilities.setOffsetValue(valueReadOffset, val);
 
             int hiword = (int)geSizeMaskForType(dataType);
             if ((SizeMask)hiword == SizeMask.INVALID)

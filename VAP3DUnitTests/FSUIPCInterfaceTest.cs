@@ -82,7 +82,7 @@ namespace VAP3DUnitTests
             String
         }
 
-        public void ReadOffsetTest(Type type, int numBytes, object variableValue, VADataTypes typeToSet, Type typeToRead)
+        public void ReadOffsetTest<T>(T variableValue, VADataTypes typeToSet)
         {
             const int address = 0x1234;
             const String destVar = "myVar";
@@ -91,22 +91,22 @@ namespace VAP3DUnitTests
             var mockOffsetFactory = new Mock<IOffsetFactory>();
             var mockProxy = new Mock<MyVAProxy>();
 
-            var mockedOffset = new Mock<IOffset>();
-            mockedOffset.Setup(x => x.GetValue(It.Is<Type>(t => t.Equals(typeToRead)))).Returns(variableValue);
+            var mockedOffset = new Mock<IOffset<T>>();
+            mockedOffset.Setup(x => x.GetValue()).Returns(variableValue);
+            mockedOffset.Setup(x => x.GetUnderlyingType()).Returns(typeof(T));
 
-            mockOffsetFactory.Setup(x => x.createOffset(It.IsAny<int>(), It.IsAny<int>())).Returns(
+            mockOffsetFactory.Setup(x => x.createOffsetForType(It.IsAny<int>(), It.IsAny<Type>())).Returns(
                 mockedOffset.Object);
 
             FSUIPCInterface fsuipcInterface = new FSUIPCInterface(mockFsuipc.Object, mockOffsetFactory.Object);
 
             fsuipcInterface.initialise(mockProxy.Object);
 
-            fsuipcInterface.readOffset(address, type, destVar);
+            fsuipcInterface.readOffset(address, typeof(T), destVar);
 
             mockProxy.Verify(x => x.WriteToLog(It.IsAny<string>(), It.Is<string>(s => s.Equals("red"))), Times.Never);
             mockFsuipc.Verify(x => x.Process(), Times.Exactly(1));
-            mockOffsetFactory.Verify(x => x.createOffset(address, numBytes), Times.Exactly(1));
-            mockedOffset.Verify(x => x.GetValue(It.Is<Type>(t => t.Equals(typeToRead))));
+            mockOffsetFactory.Verify(x => x.createOffsetForType(address, typeof(T)), Times.Exactly(1));
             if (typeToSet == VADataTypes.Int)
             {
                 mockProxy.Verify(x => x.SetInt(destVar, Convert.ToInt64(variableValue)), Times.Once());
@@ -129,25 +129,25 @@ namespace VAP3DUnitTests
         public void FSUIPCInterfaceTests_CanReadOffset()
         {
             // Int types
-            ReadOffsetTest(typeof(Char), 1, 50, VADataTypes.Int, typeof(Int64));
-            ReadOffsetTest(typeof(Byte), 1, Byte.MaxValue, VADataTypes.Int, typeof(Int64));
-            ReadOffsetTest(typeof(Int16), 2, 5, VADataTypes.Int, typeof(Int64));
-            ReadOffsetTest(typeof(UInt16), 2, UInt16.MaxValue, VADataTypes.Int, typeof(Int64));
-            ReadOffsetTest(typeof(Int32), 4, Int32.MinValue, VADataTypes.Int, typeof(Int64));
-            ReadOffsetTest(typeof(UInt32), 4, 128, VADataTypes.Int, typeof(Int64));
-            ReadOffsetTest(typeof(Int64), 8, Int64.MaxValue, VADataTypes.Int, typeof(Int64));
-            ReadOffsetTest(typeof(UInt64), 8, 50, VADataTypes.Int, typeof(Int64));
+            ReadOffsetTest<Char>((char)50, VADataTypes.Int);
+            ReadOffsetTest<Byte>(Byte.MaxValue, VADataTypes.Int);
+            ReadOffsetTest<Int16>(5, VADataTypes.Int);
+            ReadOffsetTest<UInt16>(UInt16.MaxValue, VADataTypes.Int);
+            ReadOffsetTest<Int32>(Int32.MinValue, VADataTypes.Int);
+            ReadOffsetTest<UInt32>(128, VADataTypes.Int);
+            ReadOffsetTest<Int64>(Int32.MaxValue, VADataTypes.Int);
+            ReadOffsetTest<UInt64>(50, VADataTypes.Int);
 
             // Decimal types
-            ReadOffsetTest(typeof(Double), 8, 10.4583, VADataTypes.Decimal, typeof(Decimal));
-            ReadOffsetTest(typeof(Single), 4, -1.0001, VADataTypes.Decimal, typeof(Decimal));
+            ReadOffsetTest<Double>(10.4583, VADataTypes.Decimal);
+            ReadOffsetTest<Single>(-1.0001f, VADataTypes.Decimal);
 
             // Boolean types
-            ReadOffsetTest(typeof(Boolean), 1, true, VADataTypes.Bool, typeof(Boolean));
-            ReadOffsetTest(typeof(Boolean), 1, false, VADataTypes.Bool, typeof(Boolean));
+            ReadOffsetTest<Boolean>(true, VADataTypes.Bool);
+            ReadOffsetTest<Boolean>(false, VADataTypes.Bool);
         }
 
-        public void WriteOffsetTest(Type type, int numBytes, object variableValue, VADataTypes typeToGet)
+        public void WriteOffsetTest<T>(object variableValue, VADataTypes typeToGet)
         {
             const int address = 0x1234;
             const String sourceVar = "mySourceVar";
@@ -156,39 +156,48 @@ namespace VAP3DUnitTests
             var mockOffsetFactory = new Mock<IOffsetFactory>();
             var mockProxy = new Mock<MyVAProxy>();
 
-            var mockedOffset = new Mock<IOffset>();
+            var mockedOffset = new Mock<IOffset<T>>();
+            mockedOffset.Setup(x => x.GetUnderlyingType()).Returns(typeof(T));
 
-            mockOffsetFactory.Setup(x => x.createOffset(It.IsAny<int>(),
-                It.Is<int>(i => i.Equals(numBytes)), true)).Returns(
+            mockOffsetFactory.Setup(x => x.createOffsetForType(It.IsAny<int>(),
+                It.IsAny<Type>(), true)).Returns(
                     mockedOffset.Object);
 
-            mockProxy.Setup(x => x.GetInt(It.IsAny<string>())).Returns(Convert.ToInt64(variableValue));
-            mockProxy.Setup(x => x.GetBoolean(It.IsAny<string>())).Returns(Convert.ToBoolean(variableValue));
-            mockProxy.Setup(x => x.GetDecimal(It.IsAny<string>())).Returns(Convert.ToDecimal(variableValue));
+            if (typeToGet == VADataTypes.Int)
+            {
+                mockProxy.Setup(x => x.GetInt(It.IsAny<string>())).Returns(Convert.ToInt64(variableValue));
+            }
+            else if (typeToGet == VADataTypes.Decimal)
+            {
+                mockProxy.Setup(x => x.GetDecimal(It.IsAny<string>())).Returns(Convert.ToDecimal(variableValue));
+            }
+            else if (typeToGet == VADataTypes.Bool)
+            {
+                mockProxy.Setup(x => x.GetBoolean(It.IsAny<string>())).Returns(Convert.ToBoolean(variableValue));
+            }
 
             FSUIPCInterface fsuipcInterface = new FSUIPCInterface(mockFsuipc.Object, mockOffsetFactory.Object);
 
             fsuipcInterface.initialise(mockProxy.Object);
 
-            fsuipcInterface.writeOffset(address, type, sourceVar);
+            fsuipcInterface.writeOffset(address, typeof(T), sourceVar);
 
             mockFsuipc.Verify(x => x.Process(), Times.Exactly(1));
-            mockOffsetFactory.Verify(x => x.createOffset(address, numBytes, true), Times.Exactly(1));
+            mockOffsetFactory.Verify(x => x.createOffsetForType(address, typeof(T), true), Times.Exactly(1));
+
+            mockedOffset.Verify(x => x.SetValue((T)Convert.ChangeType(variableValue, typeof(T))));
 
             if (typeToGet == VADataTypes.Int)
             {
                 mockProxy.Verify(x => x.GetInt(sourceVar), Times.Once());
-                mockedOffset.Verify(x => x.SetValue(Convert.ToInt64(variableValue)));
             }
             else if (typeToGet == VADataTypes.Decimal)
             {
                 mockProxy.Verify(x => x.GetDecimal(sourceVar), Times.Once());
-                mockedOffset.Verify(x => x.SetValue(Convert.ToDecimal(variableValue)));
             }
             else if (typeToGet == VADataTypes.Bool)
             {
                 mockProxy.Verify(x => x.GetBoolean(sourceVar), Times.Once());
-                mockedOffset.Verify(x => x.SetValue(Convert.ToBoolean(variableValue)));
             }
             else
             {
@@ -200,22 +209,22 @@ namespace VAP3DUnitTests
         public void FSUIPCInterfaceTests_CanWriteOffset()
         {
             // Int types
-            WriteOffsetTest(typeof(Char), 1, 50, VADataTypes.Int);
-            WriteOffsetTest(typeof(Byte), 1, Byte.MaxValue, VADataTypes.Int);
-            WriteOffsetTest(typeof(Int16), 2, 5, VADataTypes.Int);
-            WriteOffsetTest(typeof(UInt16), 2, UInt16.MaxValue, VADataTypes.Int);
-            WriteOffsetTest(typeof(Int32), 4, Int32.MinValue, VADataTypes.Int);
-            WriteOffsetTest(typeof(UInt32), 4, 128, VADataTypes.Int);
-            WriteOffsetTest(typeof(Int64), 8, Int64.MaxValue, VADataTypes.Int);
-            WriteOffsetTest(typeof(UInt64), 8, 50, VADataTypes.Int);
+            WriteOffsetTest<Char>((char)50, VADataTypes.Int);
+            WriteOffsetTest<Byte>(Byte.MaxValue, VADataTypes.Int);
+            WriteOffsetTest<Int16>(5, VADataTypes.Int);
+            WriteOffsetTest<UInt16>(UInt16.MaxValue, VADataTypes.Int);
+            WriteOffsetTest<Int32>(Int32.MinValue, VADataTypes.Int);
+            WriteOffsetTest<UInt32>(128, VADataTypes.Int);
+            WriteOffsetTest<Int64>(Int64.MaxValue, VADataTypes.Int);
+            WriteOffsetTest<UInt64>(50, VADataTypes.Int);
 
             // Decimal types
-            WriteOffsetTest(typeof(Double), 8, 10.4583, VADataTypes.Decimal);
-            WriteOffsetTest(typeof(Single), 4, -1.0001, VADataTypes.Decimal);
+            WriteOffsetTest<Double>(10.4583, VADataTypes.Decimal);
+            WriteOffsetTest<Single>(-1.0001, VADataTypes.Decimal);
 
             // Boolean types
-            WriteOffsetTest(typeof(Boolean), 1, true, VADataTypes.Bool);
-            WriteOffsetTest(typeof(Boolean), 1, false, VADataTypes.Bool);
+            WriteOffsetTest<Boolean>(true, VADataTypes.Bool);
+            WriteOffsetTest<Boolean>(false, VADataTypes.Bool);
         }
 
         [TestMethod]

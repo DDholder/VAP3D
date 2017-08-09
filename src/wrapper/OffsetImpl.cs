@@ -7,110 +7,6 @@ using FSUIPC;
 
 namespace VAP3D
 {
-    public class OffsetImpl : IOffset
-    {
-        private Offset m_wrappedOffset = null;
-
-        public OffsetImpl(int Address, int Length)
-        {
-            m_wrappedOffset = new Offset(Address, Length);
-        }
-
-        public OffsetImpl(int Address, int Length, bool WriteOnly)
-        {
-            m_wrappedOffset = new Offset(Address, Length, WriteOnly);
-        }
-
-        public OffsetImpl(string DataGroupName, int Address, int Length)
-        {
-            m_wrappedOffset = new Offset(DataGroupName, Address, Length);
-        }
-
-        public OffsetImpl(string DataGroupName, int Address, int Length, bool WriteOnly)
-        {
-            m_wrappedOffset = new Offset(DataGroupName, Address, Length, WriteOnly);
-        }
-
-        public bool IsFixedLengthString
-        {
-            get { return m_wrappedOffset.IsFixedLengthString; }
-            set { m_wrappedOffset.IsFixedLengthString = value; }
-        }
-
-        public bool WriteOnly
-        {
-            get { return m_wrappedOffset.WriteOnly; }
-            set { m_wrappedOffset.WriteOnly = value; }
-        }
-
-        public bool IsConnected
-        {
-            get { return m_wrappedOffset.IsConnected; }
-        }
-
-        public OffsetAction ActionAtNextProcess
-        {
-            get { return m_wrappedOffset.ActionAtNextProcess; }
-            set { m_wrappedOffset.ActionAtNextProcess = value; }
-        }
-
-        public int Address
-        {
-            get { return m_wrappedOffset.Address; }
-            set { m_wrappedOffset.Address = value; }
-        }
-
-        public Guid ID
-        {
-            get { return m_wrappedOffset.ID;  }
-        }
-
-        public int DataLength
-        {
-            get { return m_wrappedOffset.DataLength; }
-        }
-
-        public void Disconnect(bool AfterNextProcess)
-        {
-            m_wrappedOffset.Disconnect(AfterNextProcess);
-        }
-
-        public void Disconnect()
-        {
-            m_wrappedOffset.Disconnect();
-        }
-
-        public T GetValue<T>()
-        {
-            return m_wrappedOffset.GetValue<T>();
-        }
-
-        public object GetValue(Type AsType)
-        {
-            return m_wrappedOffset.GetValue(AsType);
-        }
-
-        public void Reconnect(bool ForNextProcessOnly)
-        {
-            m_wrappedOffset.Reconnect(ForNextProcessOnly);
-        }
-
-        public void Reconnect()
-        {
-            m_wrappedOffset.Reconnect();
-        }
-
-        public void SetValue(object NewValue)
-        {
-            m_wrappedOffset.SetValue(NewValue);
-        }
-
-        public override string ToString()
-        {
-            return m_wrappedOffset.ToString();
-        }
-    }
-
     public class GenericOffsetImpl<T> : IOffset<T>
     {
         private Offset<T> m_wrappedOffset = null;
@@ -161,12 +57,6 @@ namespace VAP3D
             set { m_wrappedOffset.Value = value; }
         }
 
-        public bool IsFixedLengthString
-        {
-            get { return m_wrappedOffset.IsFixedLengthString; }
-            set { m_wrappedOffset.IsFixedLengthString = value; }
-        }
-
         public bool WriteOnly
         {
             get { return m_wrappedOffset.WriteOnly; }
@@ -178,26 +68,10 @@ namespace VAP3D
             get { return m_wrappedOffset.IsConnected; }
         }
 
-        public OffsetAction ActionAtNextProcess
-        {
-            get { return m_wrappedOffset.ActionAtNextProcess; }
-            set { m_wrappedOffset.ActionAtNextProcess = value; }
-        }
-
         public int Address
         {
             get { return m_wrappedOffset.Address; }
             set { m_wrappedOffset.Address = value; }
-        }
-
-        public Guid ID
-        {
-            get { return m_wrappedOffset.ID; }
-        }
-
-        public int DataLength
-        {
-            get { return m_wrappedOffset.DataLength; }
         }
 
         public void Disconnect(bool AfterNextProcess)
@@ -210,16 +84,6 @@ namespace VAP3D
             m_wrappedOffset.Disconnect();
         }
 
-        public TType GetValue<TType>()
-        {
-            return m_wrappedOffset.GetValue<TType>();
-        }
-
-        public object GetValue(Type AsType)
-        {
-            return m_wrappedOffset.GetValue(AsType);
-        }
-
         public void Reconnect(bool ForNextProcessOnly)
         {
             m_wrappedOffset.Reconnect(ForNextProcessOnly);
@@ -230,14 +94,24 @@ namespace VAP3D
             m_wrappedOffset.Reconnect();
         }
 
-        public void SetValue(object NewValue)
-        {
-            m_wrappedOffset.SetValue(NewValue);
-        }
-
         public override string ToString()
         {
             return m_wrappedOffset.ToString();
+        }
+
+        public Type GetUnderlyingType()
+        {
+            return typeof(T);
+        }
+
+        public T GetValue()
+        {
+            return m_wrappedOffset.Value;
+        }
+
+        public void SetValue(T value)
+        {
+            m_wrappedOffset.Value = value;
         }
     }
 }

@@ -48,9 +48,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FSUIPCClient, Version=2.4.0.0, Culture=neutral, PublicKeyToken=7e7559b53e380b17, processorArchitecture=x86">
+    <Reference Include="FSUIPCClient, Version=3.0.6418.1, Culture=neutral, PublicKeyToken=7e7559b53e380b17, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\external\FSUIPCDotNetClient\3.0_RC2\FSUIPCClient.dll</HintPath>
+      <HintPath>..\external\FSUIPCDotNetClient\2.4\FSUIPCClient.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

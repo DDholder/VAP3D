@@ -44,7 +44,11 @@ namespace VAP3D
 
                     if (doCompare(watch.condition, ourValue, refVal))
                     {
-                        vaProxy.ExecuteFunction("_VAP3D_Watcher_" + watch.label);
+                        string cmd = "_VAP3D_Watcher_" + watch.label;
+                        if (vaProxy.CommandExists(cmd))
+                        {
+                            vaProxy.ExecuteCommand(cmd);
+                        }
                         watch.processed = true;
                     }
                 }

@@ -47,7 +47,7 @@ namespace VAP3D
 
                     m_vaProxy.WriteToLog("Connected to FSUIPC", "green");
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Thread.Sleep(CONNECT_SLEEP_TIME);
                 }
@@ -154,10 +154,10 @@ namespace VAP3D
                 return;
             }
 
-            IOffset offset = m_offsetFactory.createOffset(offsetAddress, numBytes);
+            IOffset offset = m_offsetFactory.createOffsetForType(offsetAddress, dataType);
             m_fsuipc.Process();
 
-            if (!Utilities.setVariableValueFromOffset(dataType, offset, destinationVariable, m_vaProxy))
+            if (!Utilities.setVariableValue(dataType, Utilities.getOffsetValue(offset), destinationVariable, m_vaProxy))
             {
                 writeErrorToLog("Failed to set '" + destinationVariable + "' with type " + dataType.Name);
             }
@@ -187,12 +187,12 @@ namespace VAP3D
                 return;
             }
 
-            IOffset offset = m_offsetFactory.createOffset(offsetAddress, numBytes, true);
+            IOffset offset = m_offsetFactory.createOffsetForType(offsetAddress, dataType, true);
 
-            object value = Utilities.getVariableValueForOffset(dataType, sourceVariable, m_vaProxy);
+            object value = Utilities.getVariableValue(dataType, sourceVariable, m_vaProxy);
             if (value != null)
             {
-                offset.SetValue(value);
+                Utilities.setOffsetValue(offset, value);
 
                 m_fsuipc.Process();
             }
@@ -219,10 +219,10 @@ namespace VAP3D
                 }
             }
 
-            IOffset offset = m_offsetFactory.createOffset(offsetAddress, length);
+            IOffset<string> offset = m_offsetFactory.createOffset<string>(offsetAddress, length);
             m_fsuipc.Process();
 
-            m_vaProxy.SetText(destinationVariable, offset.GetValue(typeof(string)));
+            m_vaProxy.SetText(destinationVariable, offset.Value);
         }
 
         /// <summary>
@@ -246,8 +246,8 @@ namespace VAP3D
             
             if (value != null)
             {
-                IOffset offset = m_offsetFactory.createOffset(offsetAddress, value.Length, true);
-                offset.SetValue(value);
+                IOffset<string> offset = m_offsetFactory.createOffset<string>(offsetAddress, value.Length, true);
+                offset.Value = value;
 
                 m_fsuipc.Process();
             }
