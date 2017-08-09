@@ -56,7 +56,14 @@
   <ItemGroup>
     <Compile Include="FunctionParserTest.cs" />
     <Compile Include="FSUIPCInterfaceTest.cs" />
+    <Compile Include="monitor\AltimeterMonitorTest.cs" />
+    <Compile Include="monitor\GroundSpeedMonitorTest.cs" />
+    <Compile Include="monitor\GenericWatcherTest.cs" />
+    <Compile Include="monitor\VerticaSpeedMonitorTest.cs" />
+    <Compile Include="monitor\GroundFlagMonitorTest.cs" />
     <Compile Include="MyVAProxy.cs" />
+    <Compile Include="EventMonitorTest.cs" />
+    <Compile Include="UtilitiesTest.cs" />
     <Compile Include="VoiceAttackPluginTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

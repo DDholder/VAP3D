@@ -26,5 +26,8 @@ namespace VAP3DUnitTests
 
         public virtual void SetBoolean(String varName, bool value) { }
         public virtual bool GetBoolean(String varName) { return false; }
+
+        public virtual bool CommandExists(String command) { return true; }
+        public virtual void ExecuteCommand(String command) { }
     }
 }

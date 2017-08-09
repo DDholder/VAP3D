@@ -30,9 +30,10 @@ namespace VAP3D
 
         public static bool setVariableValueFromOffset(Type dataType, IOffset offset, string destination, dynamic vaProxy)
         {
+            object value = offset.GetValue(dataType);
+
             if (dataType == typeof(float) || dataType == typeof(double))
             {
-                Decimal value = Convert.ToDecimal(offset.GetValue(typeof(Decimal)));
                 vaProxy.SetDecimal(destination, value);
             }
             else if (dataType == typeof(int) || dataType == typeof(uint) ||
@@ -40,12 +41,10 @@ namespace VAP3D
                 dataType == typeof(char) || dataType == typeof(byte) ||
                 dataType == typeof(long) || dataType == typeof(ulong))
             {
-                Int64 value = Convert.ToInt64(offset.GetValue(typeof(Int64)));
-                vaProxy.SetInt(destination, value);
+                vaProxy.SetInt(destination, Convert.ToInt32(value));
             }
             else if (dataType == typeof(bool))
             {
-                Boolean value = Convert.ToBoolean(offset.GetValue(typeof(Boolean)));
                 vaProxy.SetBoolean(destination, value);
             }
             else

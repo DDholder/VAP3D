@@ -65,7 +65,10 @@ namespace VAP3D
             get { return m_wrappedOffset.ID;  }
         }
 
-        public int DataLength { get; }
+        public int DataLength
+        {
+            get { return m_wrappedOffset.DataLength; }
+        }
 
         public void Disconnect(bool AfterNextProcess)
         {
@@ -192,7 +195,10 @@ namespace VAP3D
             get { return m_wrappedOffset.ID; }
         }
 
-        public int DataLength { get; }
+        public int DataLength
+        {
+            get { return m_wrappedOffset.DataLength; }
+        }
 
         public void Disconnect(bool AfterNextProcess)
         {

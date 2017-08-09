@@ -18,7 +18,7 @@ namespace VAP3D
         }
 
         private const int TenThousandFeet = 10000;
-        private const long CallThresholdMs = 20000; // 20s timeout between "10,000ft" calls.
+        public const long CallThresholdMs = 20000; // 20s timeout between "10,000ft" calls.
 
         private bool mIsFeet = true;
         private State mState = State.Invalid;

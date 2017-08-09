@@ -10,6 +10,7 @@ namespace VAP3D
     {
         void beginMonitoringEvents();
         void stopMonitoringEvents();
+        void addMetricToMonitor(int offset, object value, int conditionFlag, string identifier);
 
         void beginOffsetBatch();
         void endOffsetBatch();
